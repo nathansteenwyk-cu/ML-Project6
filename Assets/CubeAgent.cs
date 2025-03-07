@@ -29,20 +29,8 @@ public class CubeAgent : Agent
         // Move the target to a new spot
         for (int i = 0; i < 10; i++)
         {
-            Instantiate(food, new Vector3(Random.value * 12 - 4, 0.5f, Random.value * 12 - 4), transform.rotation); 
-            //Target.localPosition = new Vector3(Random.value * 8 - 4, 0.5f, Random.value * 8 - 4);
+            Instantiate(food, new Vector3(Random.Range(-24f, 24f), 0.5f, Random.Range(-24f, 24f)), transform.rotation);
         }
-    }
-
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        // Target and Agent positions
-        sensor.AddObservation(Target.localPosition);
-        sensor.AddObservation(this.transform.localPosition);
-
-        // Agent velocity
-        sensor.AddObservation(rBody.linearVelocity.x);
-        sensor.AddObservation(rBody.linearVelocity.z);
     }
 
     public float speed = 5f;
