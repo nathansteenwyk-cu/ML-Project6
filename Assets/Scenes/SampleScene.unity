@@ -395,7 +395,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SensorName: RayPerceptionSensor
-  m_DetectableTags: []
+  m_DetectableTags:
+  - Food
   m_RaysPerDirection: 5
   m_MaxRayDegrees: 155
   m_SphereCastRadius: 0.5
@@ -521,7 +522,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5041471584036861946, guid: aa115026a9eb82b4e883c7367b099bb2, type: 3}
       propertyPath: m_BehaviorType
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5041471584036861946, guid: aa115026a9eb82b4e883c7367b099bb2, type: 3}
+      propertyPath: m_BrainParameters.VectorObservationSize
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 5930406507139781901, guid: aa115026a9eb82b4e883c7367b099bb2, type: 3}
       propertyPath: food
