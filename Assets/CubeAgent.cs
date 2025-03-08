@@ -4,11 +4,15 @@ using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using NUnit.Framework.Interfaces;
 using UnityEditor.SearchService;
+using System.Collections.Generic;
 
 public class CubeAgent : Agent
 {
     Rigidbody rBody;
     public GameObject food;
+    public Transform platform;
+    public float spawnRange = 25f;
+    private List<GameObject> spawnedFood;
 
     void Start()
     {
@@ -16,55 +20,76 @@ public class CubeAgent : Agent
 
         // Freeze rotation on X and Z to prevent tilting
         rBody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        spawnedFood = new List<GameObject>();
     }
 
-    private void checkRays() {
+    private void checkRays()
+    {
         RayPerceptionSensorComponent3D sensorComponent = GetComponent<RayPerceptionSensorComponent3D>();
 
         // sensorResults is an array of type RayPerceptionOutput.RayOutput
-        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(),false).RayOutputs;
-    
-        for (int i = 0; i < sensorResults.Length; i++) {
+        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(), false).RayOutputs;
+
+        for (int i = 0; i < sensorResults.Length; i++)
+        {
             RayPerceptionOutput.RayOutput result = sensorResults[i];
-            if (result.HitTagIndex != -1) {
-                if (result.HitFraction <= 0.02f) {
-                    Destroy(result.HitGameObject);
-                    SetReward(1.0f);
+            if (result.HitTagIndex != -1 && result.HitFraction <= 0.1f)
+            {
+                GameObject hitObject = result.HitGameObject;
+                if (spawnedFood.Contains(hitObject))
+                {
+                    spawnedFood.Remove(hitObject);
+                    Destroy(hitObject);
+                    SetReward(1.5f);
                 }
             }
         }
     }
 
-    private RayPerceptionOutput.RayOutput[] getRayResults() {
+    private RayPerceptionOutput.RayOutput[] getRayResults()
+    {
         RayPerceptionSensorComponent3D sensorComponent = GetComponent<RayPerceptionSensorComponent3D>();
 
         // sensorResults is an array of type RayPerceptionOutput.RayOutput
-        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(),false).RayOutputs;
+        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(), false).RayOutputs;
 
         return sensorResults;
-    }   
+    }
 
     public override void OnEpisodeBegin()
     {
-        // If the Agent fell, reset position and velocity
-        if (this.transform.localPosition.y < 0)
+        Vector3 startPosition = platform.transform.position + new Vector3(0f, 0.5f, 0f);
+        transform.position = startPosition;
+        rBody.linearVelocity = Vector3.zero;
+        rBody.angularVelocity = Vector3.zero;
+
+        foreach (var foodItem in spawnedFood)
         {
-            rBody.linearVelocity = Vector3.zero;
-            this.transform.localPosition = new Vector3(0, 0.5f, 0);
+            if (foodItem != null) Destroy(foodItem);
         }
+        spawnedFood.Clear();
 
         // Instantiate food clones
+        float safeRange = spawnRange * 0.8f;
         for (int i = 0; i < 10; i++)
         {
-            Instantiate(food, new Vector3(Random.Range(-24f, 24f), 0.5f, Random.Range(-24f, 24f)), transform.rotation);
+            Vector3 spawnOffset = new Vector3(
+                Random.Range(-safeRange, safeRange),
+                0.5f,
+                Random.Range(-safeRange, safeRange)
+            );
+            Vector3 spawnPosition = platform.transform.position + spawnOffset;
+            GameObject newFood = Instantiate(food, spawnPosition, transform.rotation);
+            spawnedFood.Add(newFood);
         }
     }
 
     public float speed = 5f;
     public float rotationSpeed = 10f; // Adjust for smooth rotation
 
-    public override void CollectObservations(VectorSensor sensor) {
-    
+    public override void CollectObservations(VectorSensor sensor)
+    {
+
         // Agent velocity
         sensor.AddObservation(rBody.linearVelocity.x);
         sensor.AddObservation(rBody.linearVelocity.z);
@@ -73,9 +98,10 @@ public class CubeAgent : Agent
         sensor.AddObservation(this.transform.localPosition);
 
         RayPerceptionOutput.RayOutput[] results = getRayResults();
-        for(int i = 0; i < results.Length; i++) {
-                sensor.AddObservation(results[i].EndPositionWorld);
-                sensor.AddObservation(results[i].HitFraction); // distance from ray hit
+        for (int i = 0; i < results.Length; i++)
+        {
+            sensor.AddObservation(results[i].EndPositionWorld);
+            sensor.AddObservation(results[i].HitFraction); // distance from ray hit
         }
     }
 
@@ -97,20 +123,10 @@ public class CubeAgent : Agent
         // CheckRays
         checkRays(); // manages food collection and rewards 
 
-        // Fell off platform
-        if (this.transform.localPosition.y < 0) {
-            SetReward(-0.5f);
-
-            GameObject[] objects = GameObject.FindGameObjectsWithTag("Food");
-            foreach(GameObject obj in objects) {
-                Destroy(obj);
-            }
-            
-            EndEpisode();
-        }
-
         // All food collected
-        if (GameObject.FindWithTag("Food") == null) {
+        if (spawnedFood.Count == 0)
+        {
+            SetReward(5.0f); // Positive reward for collecting all food
             EndEpisode();
         }
     }
