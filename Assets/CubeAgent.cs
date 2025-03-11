@@ -33,7 +33,7 @@ public class CubeAgent : Agent
         for (int i = 0; i < sensorResults.Length; i++)
         {
             RayPerceptionOutput.RayOutput result = sensorResults[i];
-            if (result.HitTagIndex != -1 && result.HitFraction <= 0.1f)
+            if (result.HitTagIndex != -1 && result.HitFraction <= 0.03f)
             {
                 GameObject hitObject = result.HitGameObject;
                 if (spawnedFood.Contains(hitObject))
