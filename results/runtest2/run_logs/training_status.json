@@ -2,22 +2,22 @@
     "AgentCube": {
         "checkpoints": [
             {
-                "steps": 81840,
-                "file_path": "results\\runtest2\\AgentCube\\AgentCube-81840.onnx",
+                "steps": 18576,
+                "file_path": "results\\runtest2\\AgentCube\\AgentCube-18576.onnx",
                 "reward": null,
-                "creation_time": 1741740250.0526817,
+                "creation_time": 1741802012.6656246,
                 "auxillary_file_paths": [
-                    "results\\runtest2\\AgentCube\\AgentCube-81840.pt"
+                    "results\\runtest2\\AgentCube\\AgentCube-18576.pt"
                 ]
             }
         ],
         "final_checkpoint": {
-            "steps": 81840,
+            "steps": 18576,
             "file_path": "results\\runtest2\\AgentCube.onnx",
             "reward": null,
-            "creation_time": 1741740250.0526817,
+            "creation_time": 1741802012.6656246,
             "auxillary_file_paths": [
-                "results\\runtest2\\AgentCube\\AgentCube-81840.pt"
+                "results\\runtest2\\AgentCube\\AgentCube-18576.pt"
             ]
         }
     },

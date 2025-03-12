@@ -25,45 +25,28 @@ public class CubeAgent : Agent
         spawnedFood = new List<GameObject>();
     }
 
-    private void checkRays()
+    private void OnTriggerEnter(Collider other)
     {
-        RayPerceptionSensorComponent3D sensorComponent = GetComponent<RayPerceptionSensorComponent3D>();
-
-        // sensorResults is an array of type RayPerceptionOutput.RayOutput
-        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(), false).RayOutputs;
-
-        for (int i = 0; i < sensorResults.Length; i++)
+        if (other.CompareTag("Food"))
         {
-            RayPerceptionOutput.RayOutput result = sensorResults[i];
-            if (result.HitTagIndex != -1 && result.HitFraction <= 0.03f)
-            {
-                GameObject hitObject = result.HitGameObject;
-                if (spawnedFood.Contains(hitObject))
-                {
-                    spawnedFood.Remove(hitObject);
-                    Destroy(hitObject);
-                    SetReward(1.0f / spawnedFood.Count);
-                    Debug.Log(1.0f / spawnedFood.Count);
-                }
-            }
+            // Add a positive reward for collecting food
+            AddReward(1.0f/spawnedFood.Count);
+
+            // Log to console for debugging
+            Debug.Log("Food collected: " + 1.0f / spawnedFood.Count);
+
+            // Optionally destroy the food object
+            spawnedFood.Remove(other.gameObject);
+            Destroy(other.gameObject);
         }
-    }
-
-    private RayPerceptionOutput.RayOutput[] getRayResults()
-    {
-        RayPerceptionSensorComponent3D sensorComponent = GetComponent<RayPerceptionSensorComponent3D>();
-
-        // sensorResults is an array of type RayPerceptionOutput.RayOutput
-        var sensorResults = RayPerceptionSensor.Perceive(sensorComponent.GetRayPerceptionInput(), false).RayOutputs;
-
-        return sensorResults;
     }
 
     public override void OnEpisodeBegin()
     {
         stepCount = 0;
-        Vector3 startPosition = platform.transform.position + new Vector3(0f, 0.5f, 0f);
+        Vector3 startPosition = platform.transform.position + new Vector3(Random.Range(-5f, 5f), 0.5f, Random.Range(-5f, 5f));
         transform.position = startPosition;
+        transform.rotation = Quaternion.identity;
         rBody.linearVelocity = Vector3.zero;
         rBody.angularVelocity = Vector3.zero;
 
@@ -77,40 +60,39 @@ public class CubeAgent : Agent
         float safeRange = spawnRange * 0.8f;
         for (int i = 0; i < 10; i++)
         {
-            Vector3 spawnOffset = new Vector3(
-                Random.Range(-safeRange, safeRange),
-                0.5f,
-                Random.Range(-safeRange, safeRange)
-            );
+            Vector3 spawnOffset = new Vector3(Random.Range(-safeRange, safeRange),0.5f,Random.Range(-safeRange, safeRange));
             Vector3 spawnPosition = platform.transform.position + spawnOffset;
             GameObject newFood = Instantiate(food, spawnPosition, transform.rotation);
             spawnedFood.Add(newFood);
         }
     }
 
-    public float speed = 5f;
-    public float rotationSpeed = 10f; // Adjust for smooth rotation
+    public float moveSpeed = 5f;
+    public float rotationSpeed = 5f;
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         stepCount++;
         SetReward(-0.001f);
-        // Actions, size = 2
-        Vector3 moveDirection = new Vector3(actionBuffers.ContinuousActions[0], 0, actionBuffers.ContinuousActions[1]);
+        // Actions:
+        // - actionBuffers.ContinuousActions[0] = Forward movement (-1 to 1)
+        // - actionBuffers.ContinuousActions[1] = Rotation (-1 to 1)
+        float moveInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f); // Forward/backward speed
+        float rotateInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f); // Rotation speed
 
-        // Directly set velocity for sliding
-        rBody.linearVelocity = new Vector3(moveDirection.x * speed, rBody.linearVelocity.y, moveDirection.z * speed);
+        // Move in the direction the agent is facing (forward in 2D: X-Z plane)
+        Vector3 moveDirection = transform.forward * moveInput; // Forward is along agent's local Z-axis
+        Vector3 velocity = new Vector3(moveDirection.x, 0, moveDirection.z) * moveSpeed; // No normalization
+        rBody.linearVelocity = new Vector3(velocity.x, rBody.linearVelocity.y, velocity.z); // Preserve Y velocity if any
 
-        // Rotate cube to face movement direction
-        if (moveDirection.magnitude > 0.1f) // Ensure movement before rotating
+        // Rotate using Quaternion
+        if (Mathf.Abs(rotateInput) > 0.1f) // Only rotate if input is significant
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            // Rotation speed scaled similarly to moveSpeed
+            float rotationDelta = rotateInput * rotationSpeed * Time.deltaTime * 36f; // Adjust scale with multiplier
+            Quaternion rotationChange = Quaternion.Euler(0, rotationDelta, 0); // Rotate around Y-axis
+            transform.rotation = transform.rotation * rotationChange; // Apply rotation incrementally
         }
-
-        // CheckRays
-        checkRays(); // manages food collection and rewards 
-
         // All food collected
         if (spawnedFood.Count == 0)
         {
@@ -125,7 +107,7 @@ public class CubeAgent : Agent
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Horizontal");
-        continuousActionsOut[1] = Input.GetAxis("Vertical");
+        continuousActionsOut[0] = Input.GetAxis("Vertical");
+        continuousActionsOut[1] = Input.GetAxis("Horizontal");
     }
 }
