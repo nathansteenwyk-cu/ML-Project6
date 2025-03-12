@@ -145,8 +145,8 @@ MonoBehaviour:
   platform: {fileID: 2697552160481650677}
   spawnRange: 25
   maxSteps: 10000
-  moveSpeed: 5
-  rotationSpeed: 5
+  moveSpeed: 10
+  rotationSpeed: 10
 --- !u!114 &940553060140309237
 MonoBehaviour:
   m_ObjectHideFlags: 0

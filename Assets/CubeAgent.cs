@@ -35,7 +35,6 @@ public class CubeAgent : Agent
             // Log to console for debugging
             Debug.Log("Food collected: " + 1.0f / spawnedFood.Count);
 
-            // Optionally destroy the food object
             spawnedFood.Remove(other.gameObject);
             Destroy(other.gameObject);
         }
@@ -73,10 +72,8 @@ public class CubeAgent : Agent
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         stepCount++;
-        SetReward(-0.001f);
-        // Actions:
-        // - actionBuffers.ContinuousActions[0] = Forward movement (-1 to 1)
-        // - actionBuffers.ContinuousActions[1] = Rotation (-1 to 1)
+        SetReward(-0.0001f);
+
         float moveInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f); // Forward/backward speed
         float rotateInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f); // Rotation speed
 
