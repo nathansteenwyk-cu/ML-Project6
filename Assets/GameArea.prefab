@@ -35,7 +35,7 @@ Transform:
   m_GameObject: {fileID: 813950246903721234}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.6, y: 5.9948177, z: -5.1208158}
+  m_LocalPosition: {x: -3.23, y: 5.9948177, z: -3.38}
   m_LocalScale: {x: 1.0163, y: 1, z: 0.9595106}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -143,9 +143,10 @@ MonoBehaviour:
   MaxStep: 0
   food: {fileID: 7915341696301300218, guid: a838ca78996433441bc70f7cc09b73b9, type: 3}
   platform: {fileID: 2697552160481650677}
-  spawnRange: 24
+  spawnRange: 25
+  maxSteps: 10000
   speed: 5
-  rotationSpeed: 10
+  rotationSpeed: 6
 --- !u!114 &940553060140309237
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,7 +175,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 121
+    VectorObservationSize: 49
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 2
@@ -229,10 +230,10 @@ MonoBehaviour:
   m_DetectableTags:
   - Food
   - Wall
-  m_RaysPerDirection: 14
-  m_MaxRayDegrees: 180
-  m_SphereCastRadius: 0.5
-  m_RayLength: 15
+  m_RaysPerDirection: 5
+  m_MaxRayDegrees: 90
+  m_SphereCastRadius: 0
+  m_RayLength: 30
   m_RayLayerMask:
     serializedVersion: 2
     m_Bits: 4294967291
@@ -250,7 +251,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 813950246903721234}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}

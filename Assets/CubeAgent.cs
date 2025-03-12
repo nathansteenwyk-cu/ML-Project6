@@ -13,6 +13,8 @@ public class CubeAgent : Agent
     public Transform platform;
     public float spawnRange = 25f;
     private List<GameObject> spawnedFood;
+    public float maxSteps = 1000f;
+    private float stepCount;
 
     void Start()
     {
@@ -40,7 +42,8 @@ public class CubeAgent : Agent
                 {
                     spawnedFood.Remove(hitObject);
                     Destroy(hitObject);
-                    SetReward(1.5f);
+                    SetReward(1.0f / spawnedFood.Count);
+                    Debug.Log(1.0f / spawnedFood.Count);
                 }
             }
         }
@@ -58,6 +61,7 @@ public class CubeAgent : Agent
 
     public override void OnEpisodeBegin()
     {
+        stepCount = 0;
         Vector3 startPosition = platform.transform.position + new Vector3(0f, 0.5f, 0f);
         transform.position = startPosition;
         rBody.linearVelocity = Vector3.zero;
@@ -87,26 +91,10 @@ public class CubeAgent : Agent
     public float speed = 5f;
     public float rotationSpeed = 10f; // Adjust for smooth rotation
 
-    public override void CollectObservations(VectorSensor sensor)
-    {
-
-        // Agent velocity
-        sensor.AddObservation(rBody.linearVelocity.x);
-        sensor.AddObservation(rBody.linearVelocity.z);
-
-        // Agent position
-        sensor.AddObservation(this.transform.localPosition);
-
-        RayPerceptionOutput.RayOutput[] results = getRayResults();
-        for (int i = 0; i < results.Length; i++)
-        {
-            sensor.AddObservation(results[i].EndPositionWorld);
-            sensor.AddObservation(results[i].HitFraction); // distance from ray hit
-        }
-    }
-
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
+        stepCount++;
+        SetReward(-0.001f);
         // Actions, size = 2
         Vector3 moveDirection = new Vector3(actionBuffers.ContinuousActions[0], 0, actionBuffers.ContinuousActions[1]);
 
@@ -126,7 +114,10 @@ public class CubeAgent : Agent
         // All food collected
         if (spawnedFood.Count == 0)
         {
-            SetReward(5.0f); // Positive reward for collecting all food
+            EndEpisode();
+        }
+        if (stepCount == maxSteps)
+        {
             EndEpisode();
         }
     }
