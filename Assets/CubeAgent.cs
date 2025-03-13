@@ -4,7 +4,6 @@ using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using NUnit.Framework.Interfaces;
 using UnityEditor.SearchService;
-using System.Collections.Generic;
 
 public class CubeAgent : Agent
 {
@@ -12,9 +11,10 @@ public class CubeAgent : Agent
     public GameObject food;
     public Transform platform;
     public float spawnRange = 25f;
-    private List<GameObject> spawnedFood;
     public float maxSteps = 1000f;
     private float stepCount;
+    private EpisodeManager episodeManager;
+    public int numFood = 10;
 
     void Start()
     {
@@ -22,7 +22,8 @@ public class CubeAgent : Agent
 
         // Freeze rotation on X and Z to prevent tilting
         rBody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        spawnedFood = new List<GameObject>();
+
+        episodeManager = FindObjectOfType<EpisodeManager>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -30,12 +31,11 @@ public class CubeAgent : Agent
         if (other.CompareTag("Food"))
         {
             // Add a positive reward for collecting food
-            AddReward(1.0f/spawnedFood.Count);
+            AddReward(1.0f/GetNumFood());
 
             // Log to console for debugging
-            Debug.Log("Food collected: " + 1.0f / spawnedFood.Count);
+            Debug.Log("Food collected: " + 1.0f / GetNumFood());
 
-            spawnedFood.Remove(other.gameObject);
             Destroy(other.gameObject);
         }
     }
@@ -49,20 +49,22 @@ public class CubeAgent : Agent
         rBody.linearVelocity = Vector3.zero;
         rBody.angularVelocity = Vector3.zero;
 
-        foreach (var foodItem in spawnedFood)
+        foreach (Transform child in transform.parent)
         {
-            if (foodItem != null) Destroy(foodItem);
+            // Check if the child has the "Food" tag
+            if (child.CompareTag("Food"))
+            {
+                Destroy(child.gameObject); // Destroy the GameObject
+            }
         }
-        spawnedFood.Clear();
 
         // Instantiate food clones
         float safeRange = spawnRange * 0.8f;
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < numFood; i++) 
         {
             Vector3 spawnOffset = new Vector3(Random.Range(-safeRange, safeRange),0.5f,Random.Range(-safeRange, safeRange));
             Vector3 spawnPosition = platform.transform.position + spawnOffset;
-            GameObject newFood = Instantiate(food, spawnPosition, transform.rotation);
-            spawnedFood.Add(newFood);
+            GameObject newFood = Instantiate(food, spawnPosition, transform.rotation, transform.parent);
         }
     }
 
@@ -91,13 +93,10 @@ public class CubeAgent : Agent
             transform.rotation = transform.rotation * rotationChange; // Apply rotation incrementally
         }
         // All food collected
-        if (spawnedFood.Count == 0)
+        if (GetNumFood() == 0 || stepCount == maxSteps)
         {
-            EndEpisode();
-        }
-        if (stepCount == maxSteps)
-        {
-            EndEpisode();
+            AddReward(1.0f);
+            episodeManager.RequestEpisodeReset(this);
         }
     }
 
@@ -106,5 +105,23 @@ public class CubeAgent : Agent
         var continuousActionsOut = actionsOut.ContinuousActions;
         continuousActionsOut[0] = Input.GetAxis("Vertical");
         continuousActionsOut[1] = Input.GetAxis("Horizontal");
+    }
+
+    int GetNumFood()
+    {
+        // Find all GameObjects with the tag in the scene
+        GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag("Food");
+        int count = 0;
+
+        // Filter to only include children of the parent
+        foreach (GameObject obj in taggedObjects)
+        {
+            if (obj.transform.IsChildOf(transform.parent))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
