@@ -5,14 +5,14 @@ using Unity.MLAgents.Actuators;
 using NUnit.Framework.Interfaces;
 using UnityEditor.SearchService;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 public class CubeAgent : Agent
 {
     Rigidbody rBody;
     public GameObject food;
     public Transform platform;
-    public float spawnRange = 25f;
-    private List<GameObject> spawnedFood;
+    
     public float maxSteps = 1000f;
     private float stepCount;
 
@@ -22,7 +22,6 @@ public class CubeAgent : Agent
 
         // Freeze rotation on X and Z to prevent tilting
         rBody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        spawnedFood = new List<GameObject>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -30,12 +29,11 @@ public class CubeAgent : Agent
         if (other.CompareTag("Food"))
         {
             // Add a positive reward for collecting food
-            AddReward(1.0f/spawnedFood.Count);
+            AddReward(1.0f/food_maintain.getCount());
 
             // Log to console for debugging
-            Debug.Log("Food collected: " + 1.0f / spawnedFood.Count);
+            Debug.Log("Food collected: " + 1.0f / food_maintain.getCount());
 
-            spawnedFood.Remove(other.gameObject);
             Destroy(other.gameObject);
         }
     }
@@ -49,21 +47,9 @@ public class CubeAgent : Agent
         rBody.linearVelocity = Vector3.zero;
         rBody.angularVelocity = Vector3.zero;
 
-        foreach (var foodItem in spawnedFood)
-        {
-            if (foodItem != null) Destroy(foodItem);
-        }
-        spawnedFood.Clear();
-
-        // Instantiate food clones
-        float safeRange = spawnRange * 0.8f;
-        for (int i = 0; i < 10; i++)
-        {
-            Vector3 spawnOffset = new Vector3(Random.Range(-safeRange, safeRange),0.5f,Random.Range(-safeRange, safeRange));
-            Vector3 spawnPosition = platform.transform.position + spawnOffset;
-            GameObject newFood = Instantiate(food, spawnPosition, transform.rotation);
-            spawnedFood.Add(newFood);
-        }
+        food_maintain.clearFood();
+        food_maintain.spawnFood(platform, food);
+        print("calling spawn");
     }
 
     public float moveSpeed = 5f;
@@ -91,7 +77,7 @@ public class CubeAgent : Agent
             transform.rotation = transform.rotation * rotationChange; // Apply rotation incrementally
         }
         // All food collected
-        if (spawnedFood.Count == 0)
+        if (food_maintain.getCount() == 0)
         {
             EndEpisode();
         }
