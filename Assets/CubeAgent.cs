@@ -31,12 +31,18 @@ public class CubeAgent : Agent
         if (other.CompareTag("Food"))
         {
             // Add a positive reward for collecting food
-            AddReward(1.0f/GetNumFood());
+            AddReward(3.0f/GetNumFood());
 
             // Log to console for debugging
             Debug.Log("Food collected: " + 1.0f / GetNumFood());
 
             Destroy(other.gameObject);
+        }
+        else if(other.CompareTag("Wall")) {
+            AddReward(-.01f);
+
+            // Log to console for debugging
+            Debug.Log("Wall hit: -0.01");
         }
     }
 
